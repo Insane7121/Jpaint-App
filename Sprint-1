@@ -1,1 +1,135 @@
+import java.awt.*;
+import java.awt.event.*;
+import java.util.*;
+import javax.swing.*;
+
+public class JPaintApp {
+    private static final int CANVAS_WIDTH = 800;
+    private static final int CANVAS_HEIGHT = 600;
+    private static final Color DEFAULT_COLOR = Color.BLACK;
+
+    private JFrame frame;
+    private Canvas canvas;
+    private Shape currentShape;
+    private List<Shape> shapes;
+    private Deque<List<Shape>> undoStack;
+    private Deque<List<Shape>> redoStack;
+
+    public JPaintApp() {
+        shapes = new ArrayList<>();
+        undoStack = new ArrayDeque<>();
+        redoStack = new ArrayDeque<>();
+
+        frame = new JFrame("JPaint");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        canvas = new Canvas();
+        canvas.setPreferredSize(new Dimension(CANVAS_WIDTH, CANVAS_HEIGHT));
+        canvas.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                currentShape = new Rectangle(e.getX(), e.getY(), 0, 0, DEFAULT_COLOR);
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                currentShape.setWidth(e.getX() - currentShape.getX());
+                currentShape.setHeight(e.getY() - currentShape.getY());
+                shapes.add(currentShape);
+                currentShape = null;
+                canvas.repaint();
+            }
+        });
+        canvas.addMouseMotionListener(new MouseAdapter() {
+            @Override
+            public void mouseDragged(MouseEvent e) {
+                currentShape.setWidth(e.getX() - currentShape.getX());
+                currentShape.setHeight(e.getY() - currentShape.getY());
+                canvas.repaint();
+            }
+        });
+
+        frame.add(canvas);
+        frame.pack();
+        frame.setVisible(true);
+    }
+
+    private class Canvas extends JPanel {
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            Graphics2D g2d = (Graphics2D) g;
+
+            for (Shape shape : shapes) {
+                shape.draw(g2d);
+            }
+
+            if (currentShape != null) {
+                currentShape.draw(g2d);
+            }
+        }
+    }
+
+    private abstract class Shape {
+        protected int x;
+        protected int y;
+        protected int width;
+        protected int height;
+        protected Color color;
+
+        public Shape(int x, int y, int width, int height, Color color) {
+            this.x = x;
+            this.y = y;
+            this.width = width;
+            this.height = height;
+            this.color = color;
+        }
+
+        public int getX() {
+            return x;
+        }
+
+        public int getY() {
+            return y;
+        }
+
+        public int getWidth() {
+            return width;
+        }
+
+        public int getHeight() {
+            return height;
+        }
+
+        public void setWidth(int width) {
+            this.width = width;
+        }
+
+        public void setHeight(int height) {
+            this.height = height;
+        }
+
+        public void draw(Graphics2D g2d) {
+            g2d.setColor(color);
+            g2d.fill(this);
+        }
+
+        public abstract Shape clone();
+    }
+
+    private class Rectangle extends Shape {
+        public Rectangle(int x, int y, int width, int height, Color color) {
+            super(x, y, width, height, color);
+        }
+
+        @Override
+        public Rectangle clone() {
+            return new Rectangle(x, y, width, height, color);
+        }
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(JPaintApp::new);
+    }
+}
 
