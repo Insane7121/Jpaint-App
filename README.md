@@ -1,17 +1,29 @@
 #JPaintApp
-JPaintApp is a straightforward painting program created in Java using Swing. It enables users to click and drag to create filled-in rectangles on a canvas.
+JPaintApp is a straightforward painting program created in Java using Swing. It lets users click and drag to create filled-in rectangles on a canvas.
 #Features
-Draw filled-in rectangles by clicking and dragging the mouse on the canvas. The mouse movement's size and direction will be reflected in the rectangle. Once the mouse is released, the rectangle will show up on the screen.
+Draw filled-in rectangles by clicking and dragging the mouse on the canvas. The mouse movement's size and direction will be reflected in the rectangle. Once the mouse is released, the rectangle will appear on the screen.
 #Getting Started
-1] Prerequisites
-Java Development Kit(JDK) 8 or higher
-2] Running the application
-i) Compile the Java source file 'JPaintApp.java' using the following command:-
-*/javac JPaintApp.java*/
-ii) Run the compiled program using the following command:-
-*/java JPaintApp*/
-iii) The JPaintApp window will appear, and you can start drawing rectangles on the canvas
-#How To Use
-i) Click and Drag:-
-*Create a rectangle on the canvas by clicking and dragging the mouse.
-*To complete the rectangle, click and hold the mouse button. On the canvas, it will be visible.
+Step 1: Import Required Libraries
+The relevant Java libraries must be imported first in the code. The AWT (Abstract Window Toolkit) and Swing classes are included in the code to create the graphical user interface (GUI).
+Step 2: Define Constants
+CANVAS_WIDTH and CANVAS_HEIGHT, which indicate the drawing canvas's dimensions, as well as DEFAULT_PRIMARY_COLOR and DEFAULT_SECONDARY_COLOR, which establish the painting's default primary and secondary colors, are just a few of the constants defined in the code.
+Step 3: JPaintApp Class
+The primary class of the programme is JPaintApp. It oversees the drawing and shape-creation functions, initialises the canvas, and sets up the GUI window.
+Step 4: JPaintApp Constructor
+Several data structures, including lists for storing shapes and undo/redo stacks, are initialised by the JPaintApp constructor. Additionally, it returns the primary and secondary colors to their initial settings. Additionally, it creates a Canvas instance, sets up the JFrame, and adds mouse listeners to handle the generation and interaction of shapes.
+Step 5: Mouse Listeners
+Two MouseListeners are included in the code for the JPaintApp class. When a user clicks and holds the mouse button, the mousePressed listener begins producing a new form. When the user releases the mouse button, the mouseReleased listener completes the shape construction. The mouseDragged listener adjusts the shape's width and height when the user drags the mouse between the two events.
+Step 6: Canvas Class
+The Canvas class extends JPanel and is an inner class of JPaintApp. To manage the painting of forms on the canvas, it overrides the paintComponent function. The Graphics2D object is used by the paintComponent function to iteratively draw each shape in the list of shapes.
+Step 7: Shape Abstract Class
+The fundamental structure of all forms is represented by the Shape abstract class. It has getter and setter methods as well as position, dimension, and color fields. Additionally, it specifies an abstract drawShape method that the subclasses implement.
+Step 8: Shape Subclasses
+Several subclasses of the abstract Shape class, which represent various shapes, are included in the code. These comprise the shapes Triangle, FilledTriangle, OutlineAndFilledRectangle, Ellipse, and FilledEllipse. Every subclass implements the drawShape function, which uses the supplied Graphics2D object to draw each subclass's unique form.
+Step 9: CreateShape Method
+According to the user's choice of outline-only, filled-in, or outline and filled-in choices, the JPaintApp class's createShape method generates instances of various forms. In accordance with the selected settings, it returns a Shape object.
+Step 10: Main Method
+The application begins with the main method. It uses the SwingUtilities.invokeLater function to schedule the construction of the JPaintApp object, ensuring that the GUI is built and updated in the event dispatch thread.
+Bugs (if any):
+No obvious flaws are discovered after reviewing the code. To guarantee that the application performs as intended in a variety of settings, additional testing could be necessary. Shape generation problems, inconsistent drawing, and interactions with the undo/redo capability are examples of bugs.
+Please be aware that there is no user interface in this code for choosing the shape type or the drawing choices. You would need to include UI components to select the form, color, and other options in order to make it a fully effective paint programme.
+Never forget to properly test the application and deal with any potential exceptions or edge situations that could occur during use. For more functionality, take into account adding tools like drawing saving/loading, keyboard shortcuts, and a menu bar.
