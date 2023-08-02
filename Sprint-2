@@ -1,0 +1,223 @@
+import java.awt.*;
+import java.awt.event.*;
+import java.util.*;
+import javax.swing.*;
+import view.interfaces.IDialogChoice;
+import view.interfaces.IEventCallback;
+import view.interfaces.IGuiWindow;
+import view.interfaces.IUiModule;
+import view.EventName;
+
+public class JPaintApp {
+    private static final int CANVAS_WIDTH = 800;
+    private static final int CANVAS_HEIGHT = 600;
+    private static final Color DEFAULT_PRIMARY_COLOR = Color.BLACK;
+    private static final Color DEFAULT_SECONDARY_COLOR = Color.WHITE;
+
+    private JFrame frame;
+    private Canvas canvas;
+    private Shape currentShape;
+    private List<Shape> shapes;
+    private Deque<List<Shape>> undoStack;
+    private Deque<List<Shape>> redoStack;
+    private boolean isOutlineOnly;
+    private boolean isFilledIn;
+    private boolean isOutlineAndFilledIn;
+    private Color primaryColor;
+    private Color secondaryColor;
+
+    public JPaintApp() {
+        shapes = new ArrayList<>();
+        undoStack = new ArrayDeque<>();
+        redoStack = new ArrayDeque<>();
+        primaryColor = DEFAULT_PRIMARY_COLOR;
+        secondaryColor = DEFAULT_SECONDARY_COLOR;
+
+        frame = new JFrame("JPaint");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        canvas = new Canvas();
+        canvas.setPreferredSize(new Dimension(CANVAS_WIDTH, CANVAS_HEIGHT));
+        canvas.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                currentShape = createShape(e.getX(), e.getY());
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                currentShape.setWidth(e.getX() - currentShape.getX());
+                currentShape.setHeight(e.getY() - currentShape.getY());
+                shapes.add(currentShape);
+                currentShape = null;
+                canvas.repaint();
+            }
+        });
+        canvas.addMouseMotionListener(new MouseAdapter() {
+            @Override
+            public void mouseDragged(MouseEvent e) {
+                currentShape.setWidth(e.getX() - currentShape.getX());
+                currentShape.setHeight(e.getY() - currentShape.getY());
+                canvas.repaint();
+            }
+        });
+
+        frame.add(canvas);
+        frame.pack();
+        frame.setVisible(true);
+    }
+
+    private Shape createShape(int x, int y) {
+        if (isOutlineOnly) {
+            return new Rectangle(x, y, 0, 0, primaryColor);
+        } else if (isFilledIn) {
+            return new FilledRectangle(x, y, 0, 0, primaryColor);
+        } else if (isOutlineAndFilledIn) {
+            return new OutlineAndFilledRectangle(x, y, 0, 0, primaryColor, secondaryColor);
+        } else {
+            // Default fallback to outline-only rectangle
+            return new Rectangle(x, y, 0, 0, primaryColor);
+        }
+    }
+
+    private class Canvas extends JPanel {
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            Graphics2D g2d = (Graphics2D) g;
+
+            for (Shape shape : shapes) {
+                shape.draw(g2d);
+            }
+
+            if (currentShape != null) {
+                currentShape.draw(g2d);
+            }
+        }
+    }
+
+    private abstract class Shape {
+        protected int x;
+        protected int y;
+        protected int width;
+        protected int height;
+        protected Color primaryColor;
+        protected Color secondaryColor;
+
+        public Shape(int x, int y, int width, int height, Color primaryColor) {
+            this.x = x;
+            this.y = y;
+            this.width = width;
+            this.height = height;
+            this.primaryColor = primaryColor;
+        }
+
+        public int getX() {
+            return x;
+        }
+
+        public int getY() {
+            return y;
+        }
+
+        public int getWidth() {
+            return width;
+        }
+
+        public int getHeight() {
+            return height;
+        }
+
+        public void setWidth(int width) {
+            this.width = width;
+        }
+
+        public void setHeight(int height) {
+            this.height = height;
+        }
+
+        public void draw(Graphics2D g2d) {
+            g2d.setColor(primaryColor);
+            drawShape(g2d);
+        }
+
+        public abstract void drawShape(Graphics2D g2d);
+    }
+
+    private class Rectangle extends Shape {
+        public Rectangle(int x, int y, int width, int height, Color primaryColor) {
+            super(x, y, width, height, primaryColor);
+        }
+
+        @Override
+        public void drawShape(Graphics2D g2d) {
+            g2d.drawRect(x, y, width, height);
+        }
+    }
+
+    private class FilledRectangle extends Shape {
+        public FilledRectangle(int x, int y, int width, int height, Color primaryColor) {
+            super(x, y, width, height, primaryColor);
+        }
+
+        @Override
+        public void drawShape(Graphics2D g2d) {
+            g2d.fillRect(x, y, width, height);
+        }
+    }
+
+    private class OutlineAndFilledRectangle extends Shape {
+        public OutlineAndFilledRectangle(int x, int y, int width, int height, Color primaryColor, Color secondaryColor) {
+            super(x, y, width, height, primaryColor);
+            this.secondaryColor = secondaryColor;
+        }
+
+        @Override
+        public void drawShape(Graphics2D g2d) {
+            g2d.setColor(primaryColor);
+            g2d.fillRect(x, y, width, height);
+            g2d.setColor(secondaryColor);
+            g2d.drawRect(x, y, width, height);
+        }
+    }
+
+    private class Ellipse extends Shape {
+        public Ellipse(int x, int y, int width, int height, Color primaryColor) {
+            super(x, y, width, height, primaryColor);
+        }
+
+        @Override
+        public void drawShape(Graphics2D g2d) {
+            g2d.drawOval(x, y, width, height);
+        }
+    }
+
+    private class FilledEllipse extends Shape {
+        public FilledEllipse(int x, int y, int width, int height, Color primaryColor) {
+            super(x, y, width, height, primaryColor);
+        }
+
+        @Override
+        public void drawShape(Graphics2D g2d) {
+            g2d.fillOval(x, y, width, height);
+        }
+    }
+
+    private class Triangle extends Shape {
+        public Triangle(int x, int y, int width, int height, Color primaryColor) {
+            super(x, y, width, height, primaryColor);
+        }
+
+        @Override
+        public void drawShape(Graphics2D g2d) {
+            int[] xPoints = { x, x + width / 2, x + width };
+            int[] yPoints = { y + height, y, y + height };
+
+            g2d.drawPolygon(xPoints, yPoints, 3);
+        }
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(JPaintApp::new);
+    }
+}
