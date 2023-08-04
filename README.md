@@ -24,6 +24,5 @@ According to the user's choice of outline-only, filled-in, or outline and filled
 Step 10: Main Method
 The application begins with the main method. It uses the SwingUtilities.invokeLater function to schedule the construction of the JPaintApp object, ensuring that the GUI is built and updated in the event dispatch thread.
 Bugs (if any):
-No obvious flaws are discovered after reviewing the code. To guarantee that the application performs as intended in a variety of settings, additional testing could be necessary. Shape generation problems, inconsistent drawing, and interactions with the undo/redo capability are examples of bugs.
-Please be aware that there is no user interface in this code for choosing the shape type or the drawing choices. You would need to include UI components to select the form, color, and other options in order to make it a fully effective paint programme.
-Never forget to properly test the application and deal with any potential exceptions or edge situations that could occur during use. For more functionality, take into account adding tools like drawing saving/loading, keyboard shortcuts, and a menu bar.
+The application does not currently have a graphical user interface (GUI) that is user-friendly. Keyboard inputs are used by users to interact with the programme, as explained in the Usage section.
+When selecting and removing overlapping shapes, the programme might not handle them properly.
