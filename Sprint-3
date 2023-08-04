@@ -1,0 +1,264 @@
+import java.awt.*;
+import java.awt.event.*;
+import java.util.*;
+import javax.swing.*;
+import view.interfaces.IDialogChoice;
+import view.interfaces.IEventCallback;
+import view.interfaces.IGuiWindow;
+import view.interfaces.IUiModule;
+import view.EventName;
+
+interface Shape {
+    void draw(Graphics2D g2d);
+    Shape clone();
+    boolean isSelected();
+    void setSelected(boolean selected);
+}
+
+// Concrete shape classes (e.g., Rectangle, Circle, etc.)
+private class RectangleShape implements Shape {
+    public Rectangle(int x, int y, int width, int height, Color primaryColor) {
+        super(x, y, width, height, primaryColor);
+    }
+
+    @Override
+    public void drawShape(Graphics2D g2d) {
+        g2d.drawRect(x, y, width, height);
+    }
+}
+
+private class FilledRectangle extends Shape {
+    public FilledRectangle(int x, int y, int width, int height, Color primaryColor) {
+        super(x, y, width, height, primaryColor);
+    }
+
+    @Override
+    public void drawShape(Graphics2D g2d) {
+        g2d.fillRect(x, y, width, height);
+    }
+}
+
+private class OutlineAndFilledRectangle extends Shape {
+    public OutlineAndFilledRectangle(int x, int y, int width, int height, Color primaryColor, Color secondaryColor) {
+        super(x, y, width, height, primaryColor);
+        this.secondaryColor = secondaryColor;
+    }
+
+    @Override
+    public void drawShape(Graphics2D g2d) {
+        g2d.setColor(primaryColor);
+        g2d.fillRect(x, y, width, height);
+        g2d.setColor(secondaryColor);
+        g2d.drawRect(x, y, width, height);
+    }
+}
+
+private class Ellipse extends Shape {
+    public Ellipse(int x, int y, int width, int height, Color primaryColor) {
+        super(x, y, width, height, primaryColor);
+    }
+
+    @Override
+    public void drawShape(Graphics2D g2d) {
+        g2d.drawOval(x, y, width, height);
+    }
+}
+
+private class FilledEllipse extends Shape {
+    public FilledEllipse(int x, int y, int width, int height, Color primaryColor) {
+        super(x, y, width, height, primaryColor);
+    }
+
+    @Override
+    public void drawShape(Graphics2D g2d) {
+        g2d.fillOval(x, y, width, height);
+    }
+}
+
+private class Triangle extends Shape {
+    public Triangle(int x, int y, int width, int height, Color primaryColor) {
+        super(x, y, width, height, primaryColor);
+    }
+
+    @Override
+    public void drawShape(Graphics2D g2d) {
+        int[] xPoints = { x, x + width / 2, x + width };
+        int[] yPoints = { y + height, y, y + height };
+
+        g2d.drawPolygon(xPoints, yPoints, 3);
+    }
+}
+
+private class Canvas extends JPanel {
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        Graphics2D g2d = (Graphics2D) g;
+
+        for (Shape shape : shapes) {
+            shape.draw(g2d);
+        }
+
+        if (currentShape != null) {
+            currentShape.draw(g2d);
+        }
+    }
+}
+
+public class JPaintApp implements IUiModule {
+    private JFrame frame;
+    private Canvas canvas;
+    private Shape currentShape;
+    private List<Shape> shapes;
+    private Deque<List<Shape>> undoStack;
+    private Deque<List<Shape>> redoStack;
+    private List<Shape> clipboard;
+    private boolean isOutlineOnly;
+    private boolean isFilledIn;
+    private boolean isOutlineAndFilledIn;
+    private Color primaryColor;
+    private Color secondaryColor;
+
+    public JPaintApp() {
+        isOutlineOnly = false;
+        isFilledIn = false;
+        isOutlineAndFilledIn = false;
+        shapes = new ArrayList<>();
+        undoStack = new ArrayDeque<>();
+        redoStack = new ArrayDeque<>();
+        clipboard = new ArrayList<>();
+        primaryColor = DEFAULT_PRIMARY_COLOR;
+        secondaryColor = DEFAULT_SECONDARY_COLOR;
+
+        frame = new JFrame("JPaint");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        canvas = new Canvas();
+        canvas.setPreferredSize(new Dimension(CANVAS_WIDTH, CANVAS_HEIGHT));
+        canvas.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                currentShape = createShape(e.getX(), e.getY());
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                currentShape.setWidth(e.getX() - currentShape.getX());
+                currentShape.setHeight(e.getY() - currentShape.getY());
+                shapes.add(currentShape);
+                currentShape = null;
+                canvas.repaint();
+            }
+        });
+        canvas.addMouseMotionListener(new MouseAdapter() {
+            @Override
+            public void mouseDragged(MouseEvent e) {
+                currentShape.setWidth(e.getX() - currentShape.getX());
+                currentShape.setHeight(e.getY() - currentShape.getY());
+                canvas.repaint();
+            }
+        });
+
+        frame.add(canvas);
+        frame.pack();
+        frame.setVisible(true);
+    }
+
+    private Shape createShape(int x, int y) {
+        if (isOutlineOnly) {
+            return new Rectangle(x, y, 0, 0, primaryColor);
+        } else if (isFilledIn) {
+            return new FilledRectangle(x, y, 0, 0, primaryColor);
+        } else if (isOutlineAndFilledIn) {
+            return new OutlineAndFilledRectangle(x, y, 0, 0, primaryColor, secondaryColor);
+        } else {
+            // Default fallback to outline-only rectangle
+            return new Rectangle(x, y, 0, 0, primaryColor);
+        }
+    }
+
+    private void copySelectedShapes() {
+        clipboard.clear();
+        for (Shape shape : shapes) {
+            if (shape.isSelected()) {
+                clipboard.add(shape.clone());
+            }
+        }
+        undoPasteStack.push(new ArrayList<>(shapes));
+    }
+
+    private void pasteShapes() {
+        if (!clipboard.isEmpty()) {
+            // Make a clone of the shapes list and push it to the undo stack
+            List<Shape> previousShapes = new ArrayList<>(shapes);
+            undoStack.push(previousShapes);
+
+            // Paste the shapes from the clipboard
+            for (Shape shape : clipboard)                shapes.add(shape.clone());
+            }
+
+            // Clear the redo stack since it's a new state
+            redoStack.clear();
+
+            // Repaint the canvas
+            canvas.repaint();
+    }
+    
+    
+
+    private void deleteSelectedShapes() {
+        // Make a clone of the shapes list and push it to the undo stack
+        List<Shape> previousShapes = new ArrayList<>(shapes);
+        undoStack.push(previousShapes);
+
+        // Delete the selected shapes
+        shapes.removeIf(Shape::isSelected);
+
+        // Clear the redo stack since it's a new state
+        redoStack.clear();
+
+        // Repaint the canvas
+        canvas.repaint();
+    }
+
+    private void undoPaste() {
+        if (!undoStack.isEmpty()) {
+            // Make a clone of the shapes list and push it to the redo stack
+            List<Shape> previousShapes = new ArrayList<>(shapes);
+            redoStack.push(previousShapes);
+
+            // Get the previous shapes list from the undo stack and replace the current shapes list
+            shapes = undoStack.pop();
+
+            // Repaint the canvas
+            canvas.repaint();
+        }
+    }
+
+    private void redoPaste() {
+        if (!redoStack.isEmpty()) {
+            // Make a clone of the shapes list and push it to the undo stack
+            List<Shape> previousShapes = new ArrayList<>(shapes);
+            undoStack.push(previousShapes);
+
+            // Get the previous shapes list from the redo stack and replace the current shapes list
+            shapes = redoStack.pop();
+
+            // Repaint the canvas
+            canvas.repaint();
+        }
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            JPaintApp paintApp = new JPaintApp();
+
+            // Example of triggering copy, paste, delete, undo, redo actions
+            paintApp.copySelectedShapes();
+            paintApp.pasteShapes();
+            paintApp.deleteSelectedShapes();
+            paintApp.undoPaste();
+            paintApp.redoPaste();
+        });
+    }
+}
